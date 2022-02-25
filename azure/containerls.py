@@ -23,7 +23,9 @@ class Container(object):
         blobs = []
         resp = requests.get(self.container_url + '?restype=conainer&comp=list')
         if (resp.status_code != 200):
-            raise Exception("Failed to get list blobs")
+            raise Exception("Failed to list blobs. Status code: " + str(resp.status_code))
+        if (not resp.text.startswith('<?xml version="1.0" encoding="utf-8"?><EnumerationResults')):
+            raise Exception('Failed to list blobs. Unexpected response content')
         doc = BeautifulSoup(resp.text, 'lxml')
         blobnodes = doc.find_all('blob')
         for n in blobnodes:
@@ -44,11 +46,11 @@ def ls(blobs: List[BlobData]):
         line = '{0}\t{1:15}\t{2}'.format(b.lastmodified, b.size, b.name)
         print(line)
 
-def print_urls(blobs):
+def print_urls(blobs: List[BlobData]):
     for b in blobs:
         print(b.url)
 
-def print_json(blobs):
+def print_json(blobs: List[BlobData]):
     print(json.dumps([blob.__dict__ for blob in blobs], indent=2))
 
 output_options = {'ls': ls, 'json': print_json, 'url': print_urls}
@@ -60,5 +62,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     container = Container(args.url)
-    blobs = container.get_blobs()
+    try:
+        blobs = container.get_blobs()
+    except Exception as e:
+        print(e)
+        exit(1)
     output_options[args.format](blobs)
