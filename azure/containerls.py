@@ -27,13 +27,22 @@ class Container(object):
         doc = BeautifulSoup(resp.text, 'lxml')
         blobnodes = doc.find_all('blob')
         for n in blobnodes:
-            blob = BlobData(n.findChild('name').text, n.findChild('url').text, n.findChild('lastmodified').text, n.findChild('etag').text, n.findChild('size').text, n.findChild('contenttype').text, n.findChild('contentencoding').text, n.findChild('contentlanguage').text)
+            blob = BlobData(
+                n.findChild('name').text,
+                n.findChild('url').text,
+                n.findChild('lastmodified').text,
+                n.findChild('etag').text,
+                n.findChild('size').text,
+                n.findChild('contenttype').text,
+                n.findChild('contentencoding').text,
+                n.findChild('contentlanguage').text)
             blobs.append(blob)
         return blobs
 
 def ls(blobs: List[BlobData]):
     for b in blobs:
-        print('%s\t%s\t%s' % (b.lastmodified, b.size, b.name))
+        line = '{0}\t{1:15}\t{2}'.format(b.lastmodified, b.size, b.name)
+        print(line)
 
 def print_urls(blobs):
     for b in blobs:
