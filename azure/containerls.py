@@ -38,7 +38,6 @@ class Container(object):
         self.container_url = container_url
 
     def get_blobs(self, include_snapshots=False, sas=None, max_results=None) -> List[BlobData]:
-        blobs = []
         request_uri = self.container_url + '?restype=container&comp=list'
         if (include_snapshots):
             request_uri += '&include=snapshots'
@@ -52,29 +51,36 @@ class Container(object):
             raise Exception("Failed to list blobs. Status code: " + str(resp.status_code))
         if (not resp.text.startswith('<?xml version="1.0" encoding="utf-8"?><EnumerationResults')):
             raise Exception('Failed to list blobs. Unexpected response content')
-        doc = BeautifulSoup(resp.text, 'lxml')
+        return self.parse_blob_list_response(resp.text)
+    
+    def parse_blob_list_response(self, blob_list_xml):
+        blobs = []
+        doc = BeautifulSoup(blob_list_xml, 'lxml')
         blobnodes = doc.find_all('blob')
         for n in blobnodes:
-            properties = n.findChild('properties')
-            name = n.findChild('name')
-            url = n.findChild('url')
-            snapshot = n.findChild('snapshot')
-            leasestatus = properties.findChild('leasestatus')
-            blob = BlobData(
-                name.text,
-                url.text if url is not None else self.container_url + '/' + name.text,
-                snapshot.text if snapshot is not None else None,
-                properties.findChild('last-modified').text,
-                properties.findChild('etag').text,
-                properties.findChild('content-length').text,
-                properties.findChild('content-type').text,
-                properties.findChild('content-encoding').text,
-                properties.findChild('content-language').text,
-                properties.findChild('content-md5').text,
-                properties.findChild('blobtype').text,
-                leasestatus.text if leasestatus is not None else None)
+            blob = self.parse_blob_node(n)
             blobs.append(blob)
         return blobs
+    
+    def parse_blob_node(self, blob_node):
+        properties = blob_node.findChild('properties')
+        name = blob_node.findChild('name')
+        url = blob_node.findChild('url')
+        snapshot = blob_node.findChild('snapshot')
+        leasestatus = properties.findChild('leasestatus')
+        return BlobData(
+            name.text,
+            url.text if url is not None else self.container_url + '/' + name.text,
+            snapshot.text if snapshot is not None else None,
+            properties.findChild('last-modified').text,
+            properties.findChild('etag').text,
+            properties.findChild('content-length').text,
+            properties.findChild('content-type').text,
+            properties.findChild('content-encoding').text,
+            properties.findChild('content-language').text,
+            properties.findChild('content-md5').text,
+            properties.findChild('blobtype').text,
+            leasestatus.text if leasestatus is not None else None)
 
 def ls(blobs: List[BlobData], includesnapshots = False):
     for b in blobs:
