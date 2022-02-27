@@ -104,8 +104,8 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--url', help='Storage container url', required=True)
     parser.add_argument('-f', '--format', help='Output format', choices=output_options.keys(), default='ls')
     parser.add_argument('-is', '--includesnapshots', help='Include snapshots', action='store_true')
-    parser.add_argument('-s', '--sas', help='Shared Access Signatre')
-    parser.add_argument('-m', '--max', help='Max results to return', type=int)
+    parser.add_argument('-s', '--sas', help='Shared Access Signature')
+    parser.add_argument('-m', '--max', help='Max number of results to return', type=int)
     args = parser.parse_args()
 
     container = Container(args.url)
