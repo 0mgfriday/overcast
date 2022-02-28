@@ -37,10 +37,12 @@ class Container(object):
     def __init__(self, container_url):
         self.container_url = container_url
 
-    def get_blobs(self, include_snapshots=False, sas=None, max_results=None) -> List[BlobData]:
+    def get_blobs(self, include_snapshots=False, sas=None, prefix=None, max_results=None) -> List[BlobData]:
         request_uri = self.container_url + '?restype=container&comp=list'
         if (include_snapshots):
             request_uri += '&include=snapshots'
+        if (prefix is not None):
+            request_uri += '&prefix=' + prefix
         if (max_results is not None):
             request_uri += '&maxresults=' + str(max_results)
         if (sas is not None):
@@ -105,12 +107,13 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--format', help='Output format', choices=output_options.keys(), default='ls')
     parser.add_argument('-is', '--includesnapshots', help='Include snapshots', action='store_true')
     parser.add_argument('-s', '--sas', help='Shared Access Signature')
+    parser.add_argument('-p', '--prefix', help='Filter results by the specified prefix')
     parser.add_argument('-m', '--max', help='Max number of results to return', type=int)
     args = parser.parse_args()
 
     container = Container(args.url)
     try:
-        blobs = container.get_blobs(args.includesnapshots, args.sas, args.max)
+        blobs = container.get_blobs(args.includesnapshots, args.sas, args.prefix, args.max)
     except Exception as e:
         print(e)
         exit(1)
