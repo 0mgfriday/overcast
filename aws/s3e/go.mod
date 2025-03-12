@@ -1,4 +1,4 @@
-module omg/s3e
+module github.com/0mgfriday/overcast/aws/s3e
 
 go 1.23.0
 
