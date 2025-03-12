@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -77,6 +78,11 @@ func getRegion(bucketName string) (string, error) {
 		fmt.Printf("error making http request: %s\n", err)
 		return "", err
 	}
+
+	if res.StatusCode == 404 {
+		return "", errors.New("bucket not found")
+	}
+
 	region := res.Header.Get("x-amz-bucket-region")
 	if region == "" {
 		return "", errors.New("missing region header")
@@ -97,6 +103,8 @@ func (e s3Enum) listWithPrefix(bucket string, prefix string) {
 		Delimiter: aws.String("/"),
 	})
 
+	w := tabwriter.NewWriter(os.Stdout, 15, 0, 3, ' ', 0) // minwidth, tabwidth, padding, padchar, flags
+
 	if err == nil {
 		for _, object := range output.CommonPrefixes {
 			e.listWithPrefix(bucket, *object.Prefix)
@@ -105,10 +113,13 @@ func (e s3Enum) listWithPrefix(bucket string, prefix string) {
 		for _, object := range output.Contents {
 			extension := strings.Replace(filepath.Ext(aws.ToString(object.Key)), ".", "", 1)
 			if !slices.Contains(e.exclusions, extension) {
-				fmt.Printf("%s\t%d\t%s\n", object.LastModified, *object.Size, aws.ToString(object.Key))
+				fmt.Fprintf(w, "%s\t%d\t%s\t\n", object.LastModified, *object.Size, aws.ToString(object.Key))
 			}
 		}
+
 	} else {
-		fmt.Println("\t\t\t\t\t" + prefix + " (Access Denied)")
+		fmt.Fprintf(w, "%s\t%d\t%s\t\n", "0000-00-00 00:00:00 +0000 UTC", 0, prefix+" (Access Denied)")
 	}
+
+	w.Flush()
 }

@@ -1,4 +1,4 @@
-module omg/s3go
+module omg/s3e
 
 go 1.23.0
 
